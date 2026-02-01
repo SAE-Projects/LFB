@@ -21,11 +21,11 @@ float Kp = 0.12;
 float Kd = 0.06;
 
 int baseSpeed = 55;
-int maxTurn   = 60;
+int maxTurn   = 200;
 
 // EARLIER TURN DETECTION
-#define LEFT_POS_TH   -2600
-#define RIGHT_POS_TH   2600
+#define LEFT_POS_TH   -3000
+#define RIGHT_POS_TH   3000
 
 #define TURN_COMMIT_TIME 130
 
@@ -62,6 +62,7 @@ void setup() {
   }
 
   calibrateSensors(600);
+  Serial.begin(9600);
 }
 
 // ================= LOOP =================
@@ -75,48 +76,38 @@ void loop() {
 
   // ================= SHARP TURN COMMIT =================
   if (turningLeft) {
-    unsigned long t = now - turnStart;
-
-    if (t < TURN_COMMIT_TIME) {
-
-      // HARD ENTRY + SMOOTH EXIT
-      if (t < 70)
-        driveMotors(25, baseSpeed + 45);   // SNAP LEFT
-      else
-        driveMotors(40, baseSpeed + 25);   // STABILIZE
-
-      return;
-    }
-    else turningLeft = false;
+    driveMotors(-100, 100);
+    Serial.println("Entered Left");
+    delay(120);
+    Serial.println("Exiting Left");
+    turningLeft = false;
   }
 
   if (turningRight) {
-    unsigned long t = now - turnStart;
-
-    if (t < TURN_COMMIT_TIME) {
-
-      if (t < 70)
-        driveMotors(baseSpeed + 45, 25);   // SNAP RIGHT
-      else
-        driveMotors(baseSpeed + 25, 40);   // STABILIZE
-
-      return;
-    }
-    else turningRight = false;
+    Serial.println("Entered Right");
+    driveMotors(100, -100);
+    delay(120);
+    Serial.println("Exiting Right");
+    turningRight = false;
   }
 
   // ================= TURN DETECTION =================
-  if (position < LEFT_POS_TH) {
+  if (sensorNorm[3] > 890 &&
+      sensorNorm[4] > 890 &&
+      sensorNorm[5] > 890) {
     turningLeft = true;
-    turnStart = now;
+    Serial.println("Entering Left");
     return;
   }
 
-  if (position > RIGHT_POS_TH) {
+  if (sensorNorm[9] > 890 &&
+      sensorNorm[10] > 890 &&
+      sensorNorm[11] > 890) {
     turningRight = true;
-    turnStart = now;
+    Serial.println("Entering Right");
     return;
   }
+
 
   // ================= LINE FOLLOW =================
   long error = -position;
@@ -136,6 +127,8 @@ void loop() {
   rightPWM = constrain(rightPWM, 0, 255);
 
   driveMotors(leftPWM, rightPWM);
+
+  Serial.println(position);
 }
 
 // ================= POSITION =================
