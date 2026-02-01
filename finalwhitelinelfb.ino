@@ -20,7 +20,7 @@
 float Kp = 0.12;
 float Kd = 0.06;
 
-int baseSpeed = 55;
+int baseSpeed = 150;
 int maxTurn   = 200;
 
 // EARLIER TURN DETECTION
@@ -76,19 +76,34 @@ void loop() {
 
   // ================= SHARP TURN COMMIT =================
   if (turningLeft) {
-    driveMotors(-100, 100);
     Serial.println("Entered Left");
-    delay(120);
+    if((sensorNorm[8] > 890 &&
+      sensorNorm[9] > 890) ||
+      (sensorNorm[10] > 890 &&
+       sensorNorm[11] > 890)){
+        turningLeft = false;
+        return;
+       }
+    else{
+      driveMotors(-100, 100);
+    }
+     // delay(1200);
     Serial.println("Exiting Left");
-    turningLeft = false;
   }
 
   if (turningRight) {
-    Serial.println("Entered Right");
-    driveMotors(100, -100);
-    delay(120);
+     Serial.println("Entered Right");
+    if((sensorNorm[8] > 890 &&
+      sensorNorm[9] > 890) ||
+      (sensorNorm[10] > 890 &&
+       sensorNorm[11] > 890)){
+        turningRight = false;
+        return;}
+   else{
+    driveMotors(100, -100);}
+    // delay(1200);
     Serial.println("Exiting Right");
-    turningRight = false;
+    
   }
 
   // ================= TURN DETECTION =================
@@ -97,6 +112,8 @@ void loop() {
       sensorNorm[5] > 890) {
     turningLeft = true;
     Serial.println("Entering Left");
+    driveMotors(70,70);
+    delay(150);
     return;
   }
 
@@ -107,6 +124,7 @@ void loop() {
     Serial.println("Entering Right");
     return;
   }
+  if (sensorNorm[])
 
 
   // ================= LINE FOLLOW =================
@@ -169,13 +187,19 @@ void normalizeSensors() {
 
 // ================= MOTORS =================
 void driveMotors(int l, int r) {
-  digitalWrite(LIN1, HIGH);
-  digitalWrite(LIN2, LOW);
-  digitalWrite(RIN1, HIGH);
-  digitalWrite(RIN2, LOW);
+  // clamp
+  l = constrain((int)l, -200, 200);
+  r = constrain((int)r, -200, 200);
 
-  analogWrite(PWMA, l);
-  analogWrite(PWMB, r);
+  // set direction pins once per side
+  if (l >= 0) { digitalWrite(LIN1, HIGH); digitalWrite(LIN2, LOW);  }
+  else         { digitalWrite(LIN1, LOW);  digitalWrite(LIN2, HIGH); }
+
+  if (r >= 0) { digitalWrite(RIN1, HIGH); digitalWrite(RIN2, LOW);  }
+  else         { digitalWrite(RIN1, LOW);  digitalWrite(RIN2, HIGH); }
+
+  analogWrite(PWMA, abs((int)l));
+  analogWrite(PWMB, abs((int)r));
 }
 
 // ================= CALIBRATION =================
